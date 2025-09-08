@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.7/.schema/devbox.schema.json",
+  "packages": {
+    "which":          "latest",
+    "rustup":         "latest",
+    "libiconv":       "latest",
+    "cargo-binstall": "latest",
+    "dioxus-cli":     "latest"
+  },
+  "shell": {
+    "init_hook": [
+      "if [ ! -d $RUSTUP_HOME/toolchains/stable* ]; then rustup default stable; fi",
+      "if [ ! -d $RUSTUP_HOME/toolchains/stable*/lib/rustlib/wasm32-unknown-unknown ]; then rustup target add wasm32-unknown-unknown; fi",
+      "test -f .devbox/bin/dx || cargo binstall -y --root=.devbox dioxus-cli",
+      "alias ls='ls --color'"
+    ],
+    "scripts": {
+      "code": [
+        "Code --user-data-dir .vscode ."
+      ]
+    }
+  },
+  "env": {
+    "LS_COLORS": "di=33",
+    "PATH":      "$PATH:$PWD/.devbox/bin"
+  }
+}
