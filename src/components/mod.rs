@@ -6,4 +6,4 @@ mod echo;
 pub use echo::Echo;
 
 mod map;
-pub use map::Map;
+pub use map::MapPOI;

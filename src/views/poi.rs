@@ -22,18 +22,18 @@ pub fn Poi(id: i32) -> Element {
             // Navigation links
             // The `Link` component lets us link to other routes inside our app. It takes a `to` prop of type `Route` and
             // any number of child nodes.
-            Link {
-                // The `to` prop is the route that the link should navigate to. We can use the `Route` enum to link to the
-                // blog page with the id of -1. Since we are using an enum instead of a string, all of the routes will be checked
-                // at compile time to make sure they are valid.
-                to: Route::Poi { id: id - 1 },
-                "Previous"
-            }
-            span { " <---> " }
-            Link {
-                to: Route::Poi { id: id + 1 },
-                "Next"
-            }
+            // Link {
+            //     // The `to` prop is the route that the link should navigate to. We can use the `Route` enum to link to the
+            //     // blog page with the id of -1. Since we are using an enum instead of a string, all of the routes will be checked
+            //     // at compile time to make sure they are valid.
+            //     to: Route::Poi { id: id - 1 },
+            //     "Previous"
+            // }
+            // span { " <---> " }
+            // Link {
+            //     to: Route::Poi { id: id + 1 },
+            //     "Next"
+            // }
         }
     }
 }

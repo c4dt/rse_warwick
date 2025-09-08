@@ -19,6 +19,7 @@ ENV PATH="/.cargo/bin:$PATH"
 
 # Create the final bundle folder. Bundle always executes in release mode with optimizations enabled
 RUN dx bundle --platform web
+RUN ls -R /app
 
 FROM chef AS runtime
 COPY --from=builder /app/target/dx/hot_dog/release/web/ /usr/local/app

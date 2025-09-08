@@ -1,4 +1,6 @@
 use dioxus::prelude::*;
+use dioxus_leaflet::{Map, MapMarker, MapPosition};
+use flarch::tasks::wait_ms;
 
 struct POI {
     latitude: f64,
@@ -35,7 +37,7 @@ const POIS: [POI; 5] = [
 ];
 
 #[component]
-pub fn Map() -> Element {
+pub fn MapPOI() -> Element {
     #[cfg(target_family = "wasm")]
     {
         use dioxus_sdk::geolocation::{init_geolocator, use_geolocation, PowerMode};
@@ -68,7 +70,7 @@ pub fn Map() -> Element {
                 h1 { "Warwick POIs - Collect 'em all!" }
 
                 List{latitude: latest_coords.latitude, longitude: latest_coords.longitude}
-
+                LocationTracker{latitude: latest_coords.latitude, longitude: latest_coords.longitude}
                 // Google maps embed
                 //iframe {
                 //    width: "400",
@@ -105,5 +107,29 @@ fn List(latitude: f64, longitude: f64) -> Element {
 
         h2 {"Your current position is:"}
         p { "Latitude: {latitude} | Longitude: {longitude}" }
+    }
+}
+
+#[component]
+fn LocationTracker(latitude: f64, longitude: f64) -> Element {
+    let path_markers = POIS
+        .iter()
+        .map(|poi| MapMarker {
+            lat: poi.latitude,
+            lng: poi.longitude,
+            title: poi.name.into(),
+            description: None,
+            icon: None,
+            popup_options: None,
+            custom_data: None,
+        })
+        .collect();
+
+    rsx! {
+        Map {
+            initial_position: MapPosition::new(latitude, longitude, 32.),
+            markers: path_markers,
+            height: "500px",
+        }
     }
 }
