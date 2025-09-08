@@ -37,12 +37,6 @@ const _POIS: [_POI; 5] = [
 
 #[component]
 pub fn MapPOI() -> Element {
-    // let a = use_signal(|| POI {
-    //         latitude: 0,
-    //         longitude: 0,
-    //         name: "",
-    //     });
-    // a.read().
     #[cfg(feature = "web")]
     {
         use dioxus_sdk::geolocation::{init_geolocator, use_geolocation, PowerMode};
@@ -86,13 +80,16 @@ fn List(latitude: f64, longitude: f64) -> Element {
         .collect();
     dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
     let closest = dists.first().unwrap();
-    let (name, distance) = (_POIS[closest.0].name, (closest.1 * 10000.).floor() as usize);
+    let (name, distance) = (
+        _POIS[closest.0].name,
+        (closest.1 * 100000.).floor() as usize,
+    );
     let pos = format!("{:.4}/{:.4}", latitude, longitude);
     rsx! {
         p { "Your position: {pos}" }
-        if distance > 60 {
-            p { "Closest POI {name} at {distance}m" }
-            LocationTracker{latitude: latitude, longitude: longitude}
+        if distance > 10 {
+            p { "Closest POI {name} at {distance}m - get closer than 10m" }
+            LocationTracker{poi: closest.0, latitude: latitude, longitude: longitude}
         } else {
             p { "You're at POI {name}!" }
             Messages{poi: closest.0}
@@ -102,20 +99,30 @@ fn List(latitude: f64, longitude: f64) -> Element {
 
 #[component]
 fn Messages(poi: usize) -> Element {
-    rsx! {
-        p{"Here are the messages:"}
+    #[cfg(feature = "web")]
+    {
+        use dioxus_sdk::storage::*;
+
+        rsx! {
+            p{"Here are the messages:"}
+        }
     }
+    #[cfg(not(feature = "web"))]
+    rsx! {}
 }
 
 #[component]
-fn LocationTracker(latitude: f64, longitude: f64) -> Element {
+fn LocationTracker(poi: usize, latitude: f64, longitude: f64) -> Element {
     tracing::info!("{latitude} / {longitude}");
     let path_markers = _POIS
         .iter()
-        .map(|poi| MapMarker {
-            lat: poi.latitude,
-            lng: poi.longitude,
-            title: poi.name.into(),
+        .enumerate()
+        .map(|(i, p)| MapMarker {
+            lat: p.latitude,
+            lng: p.longitude,
+            title: (i != poi)
+                .then(|| p.name.into())
+                .unwrap_or(format!("**{}**", p.name)),
             description: None,
             icon: None,
             popup_options: None,
