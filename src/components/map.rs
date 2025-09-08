@@ -64,7 +64,6 @@ pub fn MapPOI() -> Element {
                 style: "text-align: center;",
                 h1 { "Warwick POIs - Collect 'em all!" }
                 List{latitude: latest_coords.latitude, longitude: latest_coords.longitude}
-                LocationTracker{latitude: latest_coords.latitude, longitude: latest_coords.longitude}
             }
         )
     }
@@ -87,11 +86,24 @@ fn List(latitude: f64, longitude: f64) -> Element {
         .collect();
     dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
     let closest = dists.first().unwrap();
+    let (name, distance) = (_POIS[closest.0].name, (closest.1 * 10000.).floor() as usize);
     let pos = format!("{:.4}/{:.4}", latitude, longitude);
     rsx! {
         p { "Your position: {pos}" }
-        p { "Closest POI {_POIS[closest.0].name} at {(closest.1 * 10000.).floor()}m" }
+        if distance > 60 {
+            p { "Closest POI {name} at {distance}m" }
+            LocationTracker{latitude: latitude, longitude: longitude}
+        } else {
+            p { "You're at POI {name}!" }
+            Messages{poi: closest.0}
+        }
+    }
+}
 
+#[component]
+fn Messages(poi: usize) -> Element {
+    rsx! {
+        p{"Here are the messages:"}
     }
 }
 
