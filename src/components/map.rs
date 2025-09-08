@@ -1,5 +1,6 @@
 use dioxus::{logger::tracing, prelude::*};
 use dioxus_leaflet::{Map, MapMarker, MapPosition};
+use serde::{Deserialize, Serialize};
 
 struct _POI {
     latitude: f64,
@@ -102,9 +103,15 @@ fn Messages(poi: usize) -> Element {
     #[cfg(feature = "web")]
     {
         use dioxus_sdk::storage::*;
+        let mut messages = use_server_future(move || get_messages(poi))?;
+
+        let mut name = use_persistent("name", || format!("Unknown"));
 
         rsx! {
-            p{"Here are the messages:"}
+            p{"Here are the messages for {name}"}
+                for msg in messages().unwrap().unwrap(){
+                    p{"-- {msg:?}"}
+                }
         }
     }
     #[cfg(not(feature = "web"))]
@@ -137,4 +144,27 @@ fn LocationTracker(poi: usize, latitude: f64, longitude: f64) -> Element {
             height: "500px",
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Message {
+    sender: String,
+    time: i64,
+    message: String,
+}
+
+#[server]
+pub async fn get_messages(poi: usize) -> Result<Vec<Message>, ServerFnError> {
+    Ok(vec![
+        Message {
+            sender: format!("Linus"),
+            time: flarch::tasks::now(),
+            message: format!("POI: {}", _POIS[poi].name),
+        },
+        Message {
+            sender: format!("Linus2"),
+            time: flarch::tasks::now(),
+            message: format!("Second post"),
+        },
+    ])
 }

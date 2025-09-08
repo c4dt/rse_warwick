@@ -12,6 +12,7 @@ dioxus-leaflet = "0.1.7"
 dioxus-sdk = { version = "0.6.0", features = ["geolocation", "storage"], optional = true }
 flarch = { version = "*", features = ["node"] }
 getrandom = {version = "0.2", features = ["js"]}
+serde = "*"
 
 [features]
 # The feature that are only required for the web = ["dioxus/web"] build target should be optional and only enabled in the web = ["dioxus/web"] feature
