@@ -9,7 +9,8 @@ COPY --chown=${DEVBOX_USER}:${DEVBOX_USER} devbox.json devbox.json
 COPY --chown=${DEVBOX_USER}:${DEVBOX_USER} devbox.lock devbox.lock
 
 RUN devbox install
-RUN devbox run -- echo "Installed Packages." && nix-store --gc && nix-store --optimise
+RUN devbox run -- echo "Installed Packages."
+# RUN devbox run -- echo "Installed Packages." && nix-store --gc && nix-store --optimise
 COPY --chown=${DEVBOX_USER}:${DEVBOX_USER} . .
 RUN devbox run build && nix-store --gc && nix-store --optimise
 
