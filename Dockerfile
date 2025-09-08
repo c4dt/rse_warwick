@@ -1,5 +1,6 @@
 FROM rust:1 AS chef
 RUN cargo install cargo-chef
+RUN rustup target add wasm32-unknown-unknown
 WORKDIR /app
 
 FROM chef AS planner
@@ -7,10 +8,9 @@ COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
-RUN rustup target add wasm32-unknown-unknown
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json --target wasm32-unknown-unknown
-COPY . .
+RUN cargo chef cook --release --recipe-path recipe.json --features web --target wasm32-unknown-unknown
+RUN cargo chef cook --release --recipe-path recipe.json
 
 # Install `dx`
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
@@ -18,11 +18,11 @@ RUN cargo binstall dioxus-cli --root /.cargo -y --force
 ENV PATH="/.cargo/bin:$PATH"
 
 # Create the final bundle folder. Bundle always executes in release mode with optimizations enabled
+COPY . .
 RUN dx bundle --platform web
-RUN ls -R /app
 
 FROM chef AS runtime
-COPY --from=builder /app/target/dx/hot_dog/release/web/ /usr/local/app
+COPY --from=builder /app/target/dx/warwick/release/web/ /usr/local/app
 
 # set our port and make sure to listen for all connections
 ENV PORT=8080
