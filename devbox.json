@@ -11,12 +11,18 @@
     "init_hook": [
       "if [ ! -d $RUSTUP_HOME/toolchains/stable* ]; then rustup default stable; fi",
       "if [ ! -d $RUSTUP_HOME/toolchains/stable*/lib/rustlib/wasm32-unknown-unknown ]; then rustup target add wasm32-unknown-unknown; fi",
-      "test -f .devbox/bin/dx || cargo binstall -y --root=.devbox dioxus-cli",
+      "cargo binstall -y --root=.devbox wasm-bindgen-cli",
       "alias ls='ls --color'"
     ],
     "scripts": {
       "code": [
         "Code --user-data-dir .vscode ."
+      ],
+      "serve": [
+	"dx serve --platform web --port 8080 --addr 0.0.0.0"
+      ],
+      "build": [
+	"dx build --platform web"
       ]
     }
   },
