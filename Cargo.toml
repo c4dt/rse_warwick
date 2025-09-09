@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "*"
+chrono = "*"
 dioxus = { version = "0.6.0", features = ["fullstack"] }
 dioxus-leaflet = "0.1.7"
 dioxus-sdk = { version = "0.6.0", features = ["geolocation", "storage"], optional = true }

@@ -30,6 +30,7 @@ impl Storage {
         if let Ok(file) = fs::read_to_string(path) {
             if let Ok(mut s) = serde_json::from_str::<Storage>(&file) {
                 s.path = path.to_string();
+                tracing::info!("{s:?}");
                 return Ok(s);
             }
         }
@@ -71,6 +72,23 @@ impl Storage {
         self.private_users.iter().map(|(_, u)| u.into()).collect()
     }
 
+    pub fn get_messages(&self, poi: usize) -> Vec<MessageString> {
+        self.messages
+            .get(&poi)
+            .unwrap_or(&vec![])
+            .iter()
+            .map(|msg| MessageString {
+                sender: self
+                    .private_users
+                    .get(&msg.sender)
+                    .map(|user| user.name.clone())
+                    .unwrap_or("Unknown".to_string()),
+                time: msg.time,
+                message: msg.message.clone(),
+            })
+            .collect()
+    }
+
     async fn save(&mut self) -> Result<()> {
         let a = LOCK.lock().map_err(|_| anyhow::anyhow!("mutex error"))?;
         let path = Path::new(&self.path);
@@ -88,6 +106,13 @@ impl Storage {
 pub struct Message {
     pub sender: U256,
     pub poi: usize,
+    pub time: i64,
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct MessageString {
+    pub sender: String,
     pub time: i64,
     pub message: String,
 }
@@ -140,8 +165,8 @@ async fn with_storage_mut<T, U: FnMut(&mut Storage) -> T>(mut f: U) -> T {
 }
 
 #[server]
-pub async fn get_messages(poi: usize) -> Result<Vec<Message>, ServerFnError> {
-    Ok(with_storage(|s| s.messages.get(&poi).cloned().unwrap_or(vec![])).await)
+pub async fn get_messages(poi: usize) -> Result<Vec<MessageString>, ServerFnError> {
+    Ok(with_storage(|s| s.get_messages(poi)).await)
 }
 
 #[server]
@@ -150,13 +175,13 @@ pub async fn get_users() -> Result<Vec<User>, ServerFnError> {
 }
 
 #[server]
-pub async fn add_message(user: U256, poi: usize, msg: String) -> Result<(), ServerFnError> {
-    with_storage_mut(|s| s.add_message(user, poi, msg.clone())).await;
+pub async fn add_message(user_private: U256, poi: usize, msg: String) -> Result<(), ServerFnError> {
+    with_storage_mut(|s| s.add_message(user_private, poi, msg.clone())).await;
     Ok(())
 }
 
 #[server]
-pub async fn store_user(private: U256, name: String) -> Result<(), ServerFnError> {
-    with_storage_mut(|s| s.add_user(private, name.clone())).await;
+pub async fn store_user(user_private: U256, name: String) -> Result<(), ServerFnError> {
+    with_storage_mut(|s| s.add_user(user_private, name.clone())).await;
     Ok(())
 }

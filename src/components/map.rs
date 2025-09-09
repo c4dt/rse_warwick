@@ -97,33 +97,47 @@ fn List(latitude: f64, longitude: f64) -> Element {
         let mut user_name =
             use_persistent("user_name", || names::Generator::default().next().unwrap());
         use_resource(move || async move {
+            use flarch::tasks::wait_ms;
+
+            // No idea why we have to wait here before storing the user...
+            wait_ms(1000).await;
+            tracing::info!("Store_user {user_id}/{user_name}");
             store_user(user_id(), user_name()).await;
         });
         let pos = format!("{:.4}/{:.4}", latitude, longitude);
         rsx! {
-            if distance > 20 {
-                p { "{user_name}, your closest POI is {name} at {distance}m - get closer than 20m" }
-                LocationTracker{poi: closest.0, latitude: latitude, longitude: longitude}
-            } else {
+            if distance < 20 {
                 p { "{user_name}, you're at POI {name}!" }
                 Messages{poi: closest.0}
+            } else {
+                p { "{user_name}, your closest POI is {name} at {distance}m - get closer than 20m" }
             }
+            LocationTracker{poi: closest.0, latitude: latitude, longitude: longitude}
         }
     }
     #[cfg(not(feature = "web"))]
     rsx! {}
 }
 
+use chrono::prelude::DateTime;
+use chrono::{Local, Utc};
+
+fn unix_to_str(unix: i64) -> String {
+    let datetime = DateTime::<Utc>::from_timestamp_millis(unix).unwrap();
+    datetime.with_timezone(&Local).to_rfc2822()
+}
+
 #[component]
 fn Messages(poi: usize) -> Element {
     #[cfg(feature = "web")]
     {
-        use flarch::tasks::wait_ms;
-
         use crate::components::storage::{add_message, get_messages};
+        use dioxus_sdk::storage::use_persistent;
+        use flarch::tasks::wait_ms;
 
         let mut messages = use_server_future(move || get_messages(poi))?;
         let mut input_text = use_signal(|| String::new());
+        let mut user_id = use_persistent("user_id", || U256::rnd());
 
         rsx! {
             textarea {
@@ -139,7 +153,7 @@ fn Messages(poi: usize) -> Element {
             button {
                 onclick: move |_| {
                     async move {
-                        add_message(U256::rnd(), poi, input_text()).await;
+                        add_message(user_id(), poi, input_text()).await;
                         messages.restart();
                     }
                 },
@@ -150,7 +164,7 @@ fn Messages(poi: usize) -> Element {
                 if msgs.len() > 0{
                     p{"Here are the messages for {_POIS[poi].name}"}
                     for msg in msgs.iter().rev() {
-                        p{"-- {msg.message:?}"}
+                        p{"-- '{msg.sender}' wrote ''{msg.message}'' at {unix_to_str(msg.time)}"}
                     }
                 } else {
                     p{"No messages found"}
