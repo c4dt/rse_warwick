@@ -13,7 +13,7 @@ struct _POI {
     name: &'static str,
 }
 
-const _POIS: [_POI; 5] = [
+const _POIS: [_POI; 10] = [
     _POI {
         latitude: 52.378933,
         longitude: -1.562204,
@@ -55,8 +55,8 @@ const _POIS: [_POI; 5] = [
         name: "Forest 2011 - 3 Planet",
     },
     _POI {
-        latitude: 52.380320,
-        longitude: -1.560126,
+        latitude: 52.380328, 
+        longitude: -1.559839,
         name: "Forest Planet - 3 2009",
     },
     _POI {
@@ -86,8 +86,8 @@ pub fn MapPOI() -> Element {
                 style: "text-align: center;",
                 h1 { "Warwick POIs - Collect 'em all!" }
                 List{latitude: latest_coords.latitude, longitude: latest_coords.longitude}
-                p{"(c) 2025 by Linus Gasser for EPFL/C4DT"}
-                Link { to: "https://github.com/c4dt/rse_warwick", "ExternalTarget target" }
+                p { "(c) 2025 by Linus Gasser for EPFL/C4DT" }
+                a { href: "https://github.com/c4dt/rse_warwick", "Github Repo" }
             }
         )
     }
