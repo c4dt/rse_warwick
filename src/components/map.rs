@@ -91,9 +91,29 @@ fn set_storage<T: Serialize + std::fmt::Debug>(key: &str, value: &T) {
 #[component]
 pub fn MapPOI() -> Element {
     #[cfg(feature = "web")]
-    {
-        use dioxus_sdk::geolocation::{init_geolocator, use_geolocation, PowerMode};
-        use flarch::tasks::wait_ms;
+    rsx! {
+        web::MapPOIWeb {  }
+    }
+    #[cfg(not(feature = "web"))]
+    rsx! {}
+}
+
+#[cfg(feature = "web")]
+mod web {
+    use super::*;
+    use crate::components::storage::{add_message, get_messages};
+    use chrono::prelude::DateTime;
+    use chrono::{Local, Utc};
+    use dioxus_leaflet::MapOptions;
+    use dioxus_sdk::geolocation::{
+        core::Geocoordinates, init_geolocator, use_geolocation, PowerMode,
+    };
+    use flarch::tasks::{spawn_local, wait_ms};
+
+    use crate::components::storage::store_user;
+
+    #[component]
+    pub fn MapPOIWeb() -> Element {
         let geolocator = init_geolocator(PowerMode::High);
         let latest_coords_caller = use_geolocation();
         let latest_coords = match latest_coords_caller() {
@@ -107,25 +127,15 @@ pub fn MapPOI() -> Element {
             div {
                 style: "text-align: center;",
                 h1 { "Warwick POIs - Collect 'em all!" }
-                List{latitude: latest_coords.latitude, longitude: latest_coords.longitude}
-                p { "(c) 2025 by Linus Gasser for EPFL/C4DT" }
+                List{longitude: latest_coords.longitude, latitude: latest_coords.latitude}
+                p { "(c) 2025 by Linus  Gasser for EPFL/C4DT" }
                 a { href: "https://github.com/c4dt/rse_warwick", "Github Repo" }
             }
         )
     }
-    #[cfg(not(target_family = "wasm"))]
-    rsx! {}
-}
 
-#[component]
-fn List(latitude: f64, longitude: f64) -> Element {
-    #[cfg(feature = "web")]
-    {
-        use dioxus_sdk::storage::*;
-        use flarch::tasks::spawn_local;
-
-        use crate::components::storage::store_user;
-
+    #[component]
+    fn List(longitude: f64, latitude: f64) -> Element {
         let mut dists: Vec<(usize, f64)> = _POIS
             .iter()
             .enumerate()
@@ -148,7 +158,15 @@ fn List(latitude: f64, longitude: f64) -> Element {
         spawn_local(async move {
             store_user(user_id, get_storage("user_name", "Unknown".to_string())).await;
         });
-        let pos = format!("{:.4}/{:.4}", latitude, longitude);
+
+        let mut update = use_signal(|| 0);
+        use_resource(move || async move {
+            loop {
+                wait_ms(10).await;
+                *update.write() += 1;
+            }
+        });
+
         rsx! {
             if distance < 20 {
                 p { "{user_name}, you're at POI {name}!" }
@@ -156,28 +174,17 @@ fn List(latitude: f64, longitude: f64) -> Element {
             } else {
                 p { "{user_name}, your closest POI is {name} at {distance}m - get closer than 20m" }
             }
-            LocationTracker{poi: closest.0, latitude: latitude, longitude: longitude}
+            LocationTracker{poi: closest.0, latitude: latitude, longitude: longitude, update: update}
         }
     }
-    #[cfg(not(feature = "web"))]
-    rsx! {}
-}
 
-use chrono::prelude::DateTime;
-use chrono::{Local, Utc};
+    fn unix_to_str(unix: i64) -> String {
+        let datetime = DateTime::<Utc>::from_timestamp_millis(unix).unwrap();
+        datetime.with_timezone(&Local).to_rfc2822()
+    }
 
-fn unix_to_str(unix: i64) -> String {
-    let datetime = DateTime::<Utc>::from_timestamp_millis(unix).unwrap();
-    datetime.with_timezone(&Local).to_rfc2822()
-}
-
-#[component]
-fn Messages(poi: usize) -> Element {
-    #[cfg(feature = "web")]
-    {
-        use crate::components::storage::{add_message, get_messages};
-        use flarch::tasks::wait_ms;
-
+    #[component]
+    fn Messages(poi: usize) -> Element {
         let mut messages = use_server_future(move || get_messages(poi))?;
         let mut input_text = use_signal(|| String::new());
         let mut user_id = get_storage("user_id", U256::rnd());
@@ -215,50 +222,54 @@ fn Messages(poi: usize) -> Element {
             }
         }
     }
-    #[cfg(not(feature = "web"))]
-    rsx! {}
-}
 
-#[component]
-fn LocationTracker(poi: usize, latitude: f64, longitude: f64) -> Element {
-    // tracing::info!("New location {latitude} / {longitude}");
-    let mut path_markers: Vec<MapMarker> = _POIS
-        .iter()
-        .enumerate()
-        .map(|(i, p)| MapMarker {
-            lat: p.latitude,
-            lng: p.longitude,
-            title: (i != poi)
-                .then(|| p.name.into())
-                .unwrap_or(format!("**{}**", p.name)),
+    #[component]
+    fn LocationTracker(
+        poi: usize,
+        latitude: f64,
+        longitude: f64,
+        update: Signal<usize>,
+    ) -> Element {
+        let mut path_markers: Vec<MapMarker> = _POIS
+            .iter()
+            .enumerate()
+            .map(|(i, p)| MapMarker {
+                lat: p.latitude,
+                lng: p.longitude,
+                title: (i != poi)
+                    .then(|| p.name.into())
+                    .unwrap_or(format!("**{}**", p.name)),
+                description: None,
+                icon: None,
+                popup_options: None,
+                custom_data: None,
+            })
+            .collect();
+        path_markers.push(MapMarker {
+            lat: latitude,
+            lng: longitude,
+            title: "Position".into(),
             description: None,
-            icon: None,
+            icon: Some(MarkerIcon {
+                icon_url: "https://img.icons8.com/define-location".into(),
+                icon_size: Some((32, 32)),
+                icon_anchor: None,
+                popup_anchor: None,
+                shadow_url: None,
+                shadow_size: None,
+            }),
             popup_options: None,
             custom_data: None,
-        })
-        .collect();
-    path_markers.push(MapMarker {
-        lat: latitude,
-        lng: longitude,
-        title: "Position".into(),
-        description: None,
-        icon: Some(MarkerIcon {
-            icon_url: "https://img.icons8.com/define-location".into(),
-            icon_size: Some((32, 32)),
-            icon_anchor: None,
-            popup_anchor: None,
-            shadow_url: None,
-            shadow_size: None,
-        }),
-        popup_options: None,
-        custom_data: None,
-    });
+        });
 
-    rsx! {
-        Map {
-            initial_position: MapPosition::new(latitude, longitude, 32.),
-            markers: path_markers,
-            height: "500px",
+        rsx! {
+            if update() % 500 > 0{
+                Map {
+                    initial_position: MapPosition::new(latitude, longitude, 32.),
+                    markers: path_markers,
+                    height: "500px",
+                }
+            }
         }
     }
 }
