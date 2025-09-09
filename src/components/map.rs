@@ -39,6 +39,31 @@ const _POIS: [_POI; 5] = [
         longitude: -1.561604,
         name: "Ripple Effect",
     },
+    _POI {
+        latitude: 52.380092,
+        longitude: -1.559804,
+        name: "Forest 2011 - 2 Planet",
+    },
+    _POI {
+        latitude: 52.380189,
+        longitude: -1.560257,
+        name: "Butterworth Bench",
+    },
+    _POI {
+        latitude: 52.380320,
+        longitude: -1.560126,
+        name: "Forest 2011 - 3 Planet",
+    },
+    _POI {
+        latitude: 52.380320,
+        longitude: -1.560126,
+        name: "Forest Planet - 3 2009",
+    },
+    _POI {
+        latitude: 52.380010,
+        longitude: -1.560788,
+        name: "White Koan",
+    },
 ];
 
 #[component]
@@ -61,6 +86,8 @@ pub fn MapPOI() -> Element {
                 style: "text-align: center;",
                 h1 { "Warwick POIs - Collect 'em all!" }
                 List{latitude: latest_coords.latitude, longitude: latest_coords.longitude}
+                p{"(c) 2025 by Linus Gasser for EPFL/C4DT"}
+                Link { to: "https://github.com/c4dt/rse_warwick", "ExternalTarget target" }
             }
         )
     }

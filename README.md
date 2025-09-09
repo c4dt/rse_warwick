@@ -1,34 +1,28 @@
-# Development
+# Warwick POIs
 
-Your new jumpstart project includes basic organization with an organized `assets` folder and a `components` folder.
-If you chose to develop with the router feature, you will also have a `views` folder.
+I saw funny columns on the OpenStreetMap with strange names, and realized that they
+are all over the Warwick Campus.
+As it's RSECon25, I thought that's a fun project to make a "Go catch 'em all"
+game, where people can write messages while being at the POIs.
+Of course it took way longer than the 1 hour I was hoping to get up and started.
 
-```
-project/
-├─ assets/ # Any assets that are used by the app should be placed here
-├─ src/
-│  ├─ main.rs # The entrypoint for the app. It also defines the routes for the app.
-│  ├─ components/
-│  │  ├─ mod.rs # Defines the components module
-│  │  ├─ hero.rs # The Hero component for use in the home page
-│  │  ├─ echo.rs # The echo component uses server functions to communicate with the server
-│  ├─ views/ # The views each route will render in the app.
-│  │  ├─ mod.rs # Defines the module for the views route and re-exports the components for each route
-│  │  ├─ blog.rs # The component that will render at the /blog/:id route
-│  │  ├─ home.rs # The component that will render at the / route
-├─ Cargo.toml # The Cargo.toml file defines the dependencies and feature flags for your project
-```
+- 2h for initial hacking
+- 3h for CI/CD
+- 3h for server storage
+- 2h to do some cleanup
 
-### Serving Your App
+## Developing
 
-Run the following command in the root of your project to start developing with the default platform:
+If you want to have fun and do a PR, please:
 
-```bash
-dx serve --platform web
-```
+- Install [Devbox](https://www.jetify.com/docs/devbox/installing_devbox/)
+- Test your PR with `devbox run serve` locally
+- Create a PR against this repo
 
-To run for a different platform, use the `--platform platform` flag. E.g.
-```bash
-dx serve --platform desktop
-```
+## License
 
+Apache2 / MIT
+
+## Copyright
+
+Linus Gasser, EPFL/C4DT, 2025
