@@ -18,6 +18,7 @@ getrandom = {version = "0.2", features = ["js"]}
 names = { version = "0.14", default-features = false }
 serde = "*"
 serde_json = "*"
+web-sys = {version = "*", features = ["Storage", "Window"]}
 
 [features]
 # The feature that are only required for the web = ["dioxus/web"] build target should be optional and only enabled in the web = ["dioxus/web"] feature

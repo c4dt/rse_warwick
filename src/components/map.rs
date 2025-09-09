@@ -5,6 +5,7 @@ use dioxus::{fullstack::once_cell::sync::OnceCell, logger::tracing, prelude::*};
 use dioxus_leaflet::{Map, MapMarker, MapPosition, MarkerIcon};
 use flarch::{nodeids::U256, tasks::now};
 use flmacro::VersionedSerde;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 struct _POI {
@@ -13,7 +14,7 @@ struct _POI {
     name: &'static str,
 }
 
-const _POIS: [_POI; 10] = [
+const _POIS: [_POI; 11] = [
     _POI {
         latitude: 52.378933,
         longitude: -1.562204,
@@ -55,7 +56,7 @@ const _POIS: [_POI; 10] = [
         name: "Forest 2011 - 3 Planet",
     },
     _POI {
-        latitude: 52.380328, 
+        latitude: 52.380328,
         longitude: -1.559839,
         name: "Forest Planet - 3 2009",
     },
@@ -64,7 +65,28 @@ const _POIS: [_POI; 10] = [
         longitude: -1.560788,
         name: "White Koan",
     },
+    _POI {
+        latitude: 52.377715,
+        longitude: -1.567944,
+        name: "The good, the bad",
+    },
 ];
+
+fn get_storage<T: DeserializeOwned + Serialize + std::fmt::Debug>(key: &str, default: T) -> T {
+    let local_storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
+    if let Some(s) = local_storage.get_item(key).unwrap() {
+        if let Ok(value) = serde_json::from_str(&s) {
+            return value;
+        }
+    }
+    set_storage(key, &default);
+    return default;
+}
+
+fn set_storage<T: Serialize + std::fmt::Debug>(key: &str, value: &T) {
+    let local_storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
+    local_storage.set_item(key, &serde_json::to_string(value).unwrap());
+}
 
 #[component]
 pub fn MapPOI() -> Element {
@@ -100,6 +122,7 @@ fn List(latitude: f64, longitude: f64) -> Element {
     #[cfg(feature = "web")]
     {
         use dioxus_sdk::storage::*;
+        use flarch::tasks::spawn_local;
 
         use crate::components::storage::store_user;
 
@@ -120,15 +143,10 @@ fn List(latitude: f64, longitude: f64) -> Element {
             _POIS[closest.0].name,
             (closest.1 * 100000.).floor() as usize,
         );
-        let mut user_id = use_persistent("user_id", || U256::rnd());
-        let mut user_name =
-            use_persistent("user_name", || names::Generator::default().next().unwrap());
-        use_resource(move || async move {
-            use flarch::tasks::wait_ms;
-
-            // No idea why we have to wait here before storing the user...
-            wait_ms(1000).await;
-            store_user(user_id(), user_name()).await;
+        let user_id = get_storage("user_id", U256::rnd());
+        let user_name = get_storage("user_name", names::Generator::default().next().unwrap());
+        spawn_local(async move {
+            store_user(user_id, get_storage("user_name", "Unknown".to_string())).await;
         });
         let pos = format!("{:.4}/{:.4}", latitude, longitude);
         rsx! {
@@ -158,12 +176,11 @@ fn Messages(poi: usize) -> Element {
     #[cfg(feature = "web")]
     {
         use crate::components::storage::{add_message, get_messages};
-        use dioxus_sdk::storage::use_persistent;
         use flarch::tasks::wait_ms;
 
         let mut messages = use_server_future(move || get_messages(poi))?;
         let mut input_text = use_signal(|| String::new());
-        let mut user_id = use_persistent("user_id", || U256::rnd());
+        let mut user_id = get_storage("user_id", U256::rnd());
 
         rsx! {
             textarea {
@@ -179,7 +196,7 @@ fn Messages(poi: usize) -> Element {
             button {
                 onclick: move |_| {
                     async move {
-                        add_message(user_id(), poi, input_text()).await;
+                        add_message(user_id, poi, input_text()).await;
                         messages.restart();
                     }
                 },
