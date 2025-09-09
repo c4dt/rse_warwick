@@ -2,8 +2,6 @@
 // need dioxus
 use dioxus::prelude::*;
 
-use crate::components::map::MapPOI;
-
 /// Define a components module that contains all shared components for our app.
 mod components;
 
@@ -32,6 +30,6 @@ fn App() -> Element {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
 
-        MapPOI {  }
+        crate::components::map::MapPOI{}
     }
 }
