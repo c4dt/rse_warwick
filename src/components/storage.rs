@@ -30,7 +30,6 @@ impl Storage {
         if let Ok(file) = fs::read_to_string(path) {
             if let Ok(mut s) = serde_json::from_str::<Storage>(&file) {
                 s.path = path.to_string();
-                tracing::info!("{s:?}");
                 return Ok(s);
             }
         }
@@ -43,6 +42,7 @@ impl Storage {
     }
 
     pub fn add_message(&mut self, user: U256, poi: usize, message: String) -> Result<()> {
+        tracing::info!("Adding message {poi}/{message}");
         let msg = Message {
             sender: user,
             poi,
@@ -60,10 +60,13 @@ impl Storage {
         self.private_users
             .entry(id)
             .and_modify(|u| u.name = name.clone())
-            .or_insert(UserPrivate {
-                name,
-                points: 0,
-                id_private: id,
+            .or_insert_with(|| {
+                tracing::info!("Adding user {name}/{id}");
+                UserPrivate {
+                    name,
+                    points: 0,
+                    id_private: id,
+                }
             });
         Ok(())
     }

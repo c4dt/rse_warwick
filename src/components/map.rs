@@ -128,7 +128,6 @@ fn List(latitude: f64, longitude: f64) -> Element {
 
             // No idea why we have to wait here before storing the user...
             wait_ms(1000).await;
-            tracing::info!("Store_user {user_id}/{user_name}");
             store_user(user_id(), user_name()).await;
         });
         let pos = format!("{:.4}/{:.4}", latitude, longitude);
@@ -205,7 +204,7 @@ fn Messages(poi: usize) -> Element {
 
 #[component]
 fn LocationTracker(poi: usize, latitude: f64, longitude: f64) -> Element {
-    tracing::info!("New location {latitude} / {longitude}");
+    // tracing::info!("New location {latitude} / {longitude}");
     let mut path_markers: Vec<MapMarker> = _POIS
         .iter()
         .enumerate()
