@@ -80,16 +80,44 @@ impl Storage {
             .get(&poi)
             .unwrap_or(&vec![])
             .iter()
-            .map(|msg| MessageString {
-                sender: self
-                    .private_users
-                    .get(&msg.sender)
-                    .map(|user| user.name.clone())
-                    .unwrap_or("Unknown".to_string()),
-                time: msg.time,
-                message: msg.message.clone(),
-            })
+            .map(|msg| self.message_string(msg))
             .collect()
+    }
+
+    fn message_string(&self, msg: &Message) -> MessageString {
+        MessageString {
+            sender: self
+                .private_users
+                .get(&msg.sender)
+                .map(|user| user.name.clone())
+                .unwrap_or("Unknown".to_string()),
+            time: msg.time,
+            message: msg.message.clone(),
+        }
+    }
+
+    pub fn get_stats(&self) -> Stats {
+        let mut all_messages: Vec<(&usize, &Message)> = self
+            .messages
+            .iter()
+            .flat_map(|(poi, msgs)| msgs.iter().map(|msg| (poi, msg)).collect::<Vec<_>>())
+            .collect::<Vec<_>>();
+        all_messages.sort_by(|a, b| a.1.time.cmp(&b.1.time));
+        let total_messages = all_messages.len();
+        let total_users = self.private_users.len();
+        if let Some(poi_msg) = all_messages.last() {
+            Stats {
+                last: Some((self.message_string(poi_msg.1), *poi_msg.0)),
+                total_messages,
+                total_users,
+            }
+        } else {
+            Stats {
+                last: None,
+                total_messages,
+                total_users,
+            }
+        }
     }
 
     async fn save(&mut self) -> Result<()> {
@@ -111,6 +139,13 @@ pub struct Message {
     pub poi: usize,
     pub time: i64,
     pub message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Stats {
+    pub last: Option<(MessageString, usize)>,
+    pub total_messages: usize,
+    pub total_users: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -187,4 +222,9 @@ pub async fn add_message(user_private: U256, poi: usize, msg: String) -> Result<
 pub async fn store_user(user_private: U256, name: String) -> Result<(), ServerFnError> {
     with_storage_mut(|s| s.add_user(user_private, name.clone())).await;
     Ok(())
+}
+
+#[server]
+pub async fn get_stats() -> Result<Stats, ServerFnError> {
+    Ok(with_storage(|s| s.get_stats()).await)
 }
