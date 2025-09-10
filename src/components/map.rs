@@ -120,7 +120,13 @@ pub fn MapPOIWeb() -> Element {
     rsx!(
         div {
             if latitude == 0f64 && longitude == 0f64 {
-                h2 { "Please enable location usage for the browser!" }
+                h2 { style: "
+                        color: #e74c3c;
+                        font-weight: bold;
+                        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                        animation: gentle-pulse 3s ease-in-out infinite;
+                    ",
+                    "Please enable location usage for the browser!" }
             } else {
                 List{longitude: longitude, latitude: latitude}
                 LocationTracker {longitude: longitude, latitude: latitude}
