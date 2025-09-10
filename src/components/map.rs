@@ -72,6 +72,8 @@ const _POIS: [_POI; 11] = [
     },
 ];
 
+static QRCODE: Asset = asset!("/assets/qrcode.png");
+
 #[component]
 pub fn MapPOI() -> Element {
     rsx! {
@@ -81,6 +83,9 @@ pub fn MapPOI() -> Element {
             MapPOIWeb{}
             p { "(c) 2025 by Linus  Gasser for EPFL/C4DT" }
             a { href: "https://github.com/c4dt/rse_warwick", "Github Repo" }
+            br {}
+            br {}
+            img { src: QRCODE, style: "width: 50%;" }
         }
     }
 }
@@ -214,7 +219,9 @@ fn Stats() -> Element {
                 div {
                     "Stats: {s.total_users} users - {s.total_messages} messages"
                     br{}
-                    "last message at __{_POIS[last.1].name}__ from '{last.0.sender}': ''{last.0.message}'' at {unix_to_str(last.0.time)}"
+                    "last message at __{_POIS[last.1].name}__ from '{last.0.sender}':"
+                    br{}
+                    "''{last.0.message}'' at {unix_to_str(last.0.time)}"
                 }
             } else {
                 p{"Stats: {s.total_users} users"}
